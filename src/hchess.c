@@ -12,7 +12,7 @@ uint16_t hchess_connect(char* address, int port) {
     struct timeval tv;
     tv.tv_sec = 3;
     tv.tv_usec = 0;
-    setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
+    setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (const char*) &tv, sizeof(tv));
 
     struct sockaddr_in server;
     server.sin_family = AF_INET;
@@ -54,6 +54,20 @@ int hchess_join(uint16_t sessionIndex, int32_t roomId) {
     _send_websocket_message(sessionIndex, payload, 5);
     chessSessions[sessionIndex].isHost = 0;
     return 0;
+}
+
+int32_t hchess_create_room(uint16_t sessionIndex) {
+    uint8_t* payload = (uint8_t*) malloc(sizeof(uint8_t) * 3);
+    payload[0] = protocol_CREATE;
+    payload[1] = protocol_HCHESS;
+    payload[2] = 0; // No friendly fire
+    _send_websocket_message(sessionIndex, payload, 3);
+    chessSessions[sessionIndex].isHost = 1;
+    chessSessions[sessionIndex].waitingForRoomId = 1;
+    while (chessSessions[sessionIndex].waitingForRoomId) {
+        sched_yield();
+    }
+    return chessSessions[sessionIndex].roomId;
 }
 
 int hchess_move(uint16_t sessionIndex, char* from, char* to) {
@@ -156,7 +170,8 @@ int hchess_wait_for_state(uint16_t sessionIndex) {
             break;
         }
         case protocol_ROOM: {
-            printf("protocol_ROOM\n");
+            memcpy(&(c->roomId), &recvbuf[payloadStart + 1], 4);
+            c->waitingForRoomId = 0;
             break;
         }
         default: {
@@ -178,7 +193,9 @@ int _send_websocket_message(uint16_t sessionIndex, uint8_t* payload, size_t payl
     buf[4] = 0x00; // Masking key 3/4
     buf[5] = 0x00; // Masking key 4/4
     memcpy(&buf[6], payload, payloadLen);
-    send(chessSessions[sessionIndex].sockfd, buf, 6 + payloadLen, 0);
+    // Increase chances of socket actually flushing data
+    int padding = (payloadLen < 5 ? 5 - payloadLen : 0);
+    send(chessSessions[sessionIndex].sockfd, buf, 6 + payloadLen + padding, 0);
     free(buf);
     return 0;
 }

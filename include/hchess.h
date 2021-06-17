@@ -4,14 +4,17 @@
 #include <arpa/inet.h>
 #include <string.h>
 #include <stdlib.h>
+#include <netinet/tcp.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <sched.h>
 #include <assert.h>
 #include "protocol.h"
 
 uint16_t hchess_connect(char* address, int port);
 int hchess_close(uint16_t sessionIndex);
 int hchess_join(uint16_t sessionIndex, int32_t roomId);
+int32_t hchess_create_room(uint16_t sessionIndex);
 int hchess_move(uint16_t sessionIndex, char* from, char* to);
 int hchess_wait_for_state(uint16_t sessionIndex);
 int hchess_start_state_thread(uint16_t sessionIndex);
@@ -46,6 +49,9 @@ struct chessSession {
 
     // chess metadata
     uint8_t isHost;
+    uint8_t waitingForRoomId;
+    int32_t roomId;
+
 
     // chess state
     uint8_t isHostsTurn;

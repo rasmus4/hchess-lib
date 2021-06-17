@@ -5,6 +5,8 @@
 #define CLI_CONNECT_LEN 8
 #define CLI_JOIN "join "
 #define CLI_JOIN_LEN 5
+#define CLI_CREATE "create room"
+#define CLI_CREATE_LEN 1
 #define CLI_QUIT "quit"
 #define CLI_QUIT_LEN 4
 #define CLI_RECV "recv"
@@ -63,12 +65,12 @@ int main() {
             );
             hchess_start_state_thread(session);
         }
-        else if (0 == memcmp(buf, CLI_JOIN, CLI_JOIN_LEN)) {
+        else if (0 == memcmp(buf, CLI_JOIN, CLI_JOIN_LEN))
             hchess_join(session, atoi(&buf[CLI_JOIN_LEN]));
-        }
-        else if (0 == memcmp(buf, CLI_MOVE, CLI_MOVE_LEN) && 14 == strlen(buf)) {
+        else if (0 == memcmp(buf, CLI_CREATE, CLI_CREATE_LEN))
+            printf("Game Id: %d\n", hchess_create_room(session));
+        else if (0 == memcmp(buf, CLI_MOVE, CLI_MOVE_LEN) && 14 == strlen(buf))
             hchess_move(session, &buf[5], &buf[11]);
-        }
         else if (0 == memcmp(buf, CLI_RECV, CLI_RECV_LEN))
             hchess_wait_for_state(session);
         else if (0 == memcmp(buf, CLI_QUIT, CLI_QUIT_LEN)) {
