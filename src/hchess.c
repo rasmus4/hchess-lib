@@ -145,7 +145,7 @@ int hchess_wait_for_state(uint16_t sessionIndex) {
     uint16_t payloadStart = 2;
     switch (recvbuf[payloadStart]) {
         case protocol_HOME: {
-            printf("protocol_HOME\n");
+            //printf("protocol_HOME\n");
             break;
         }
         case protocol_CHESS: {
