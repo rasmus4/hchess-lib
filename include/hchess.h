@@ -45,6 +45,7 @@ void hchess_set_callbacks(
 
 void* _hchess_state_thread_function(void* args);
 int _send_websocket_message(uint16_t sessionIndex, uint8_t* payload, size_t payloadLen);
+void _print_buf(uint8_t* buf, int buflen);
 
 struct stateThreadArgs {
     uint16_t sessionIndex;

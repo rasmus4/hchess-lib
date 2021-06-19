@@ -26,8 +26,9 @@ uint16_t hchess_connect(char* address, int port) {
 
 
     send(sockfd, GET_WS_REQUEST, strlen(GET_WS_REQUEST), 0);
-    char* recvbuf = (char*) malloc(sizeof(char) * 512);
+    uint8_t* recvbuf = (uint8_t*) malloc(sizeof(uint8_t) * 512);
     recv(sockfd, recvbuf, 512, 0);
+    free(recvbuf);
     printf("Connected\n");
     if (chessSessions == NULL) {
         chessSessions = (struct chessSession*) malloc(sizeof(struct chessSession));
@@ -53,6 +54,7 @@ int hchess_join(uint16_t sessionIndex, int32_t roomId) {
     memcpy(&payload[1], &roomId, 4);
     _send_websocket_message(sessionIndex, payload, 5);
     chessSessions[sessionIndex].isHost = 0;
+    free(payload);
     return 0;
 }
 
@@ -67,6 +69,7 @@ int32_t hchess_create_room(uint16_t sessionIndex) {
     while (chessSessions[sessionIndex].waitingForRoomId) {
         sched_yield();
     }
+    free(payload);
     return chessSessions[sessionIndex].roomId;
 }
 
@@ -78,6 +81,7 @@ int hchess_move(uint16_t sessionIndex, char* from, char* to) {
     payload[3] = ((uint8_t) to[0]) - 97; // to.x
     payload[4] = ((uint8_t) to[1]) - 49; // to.y
     _send_websocket_message(sessionIndex, payload, 5);
+    free(payload);
     return 0;
 }
 
@@ -114,27 +118,39 @@ void* _hchess_state_thread_function(void* args) {
     while (c->thread_running) {
         hchess_wait_for_state(((struct stateThreadArgs*)args)->sessionIndex);
     }
+    free(args);
     return NULL;
+}
+
+void _print_buf(uint8_t* buf, int buflen) {
+    for (int i = 0; i < buflen; ++i) {
+        printf("0x%02x ", buf[i]);
+    }
+    printf("\n");
 }
 
 int hchess_wait_for_state(uint16_t sessionIndex) {
     uint8_t* recvbuf = (uint8_t*) malloc(sizeof(uint8_t) * 512);
     struct chessSession* c = &chessSessions[sessionIndex];
-    if (-1 == recv(c->sockfd, recvbuf, 512, 0)) {
-        if (11 == errno) // time out
-            return errno;
-        printf("recv(): errno %d\n", errno);
+    int recv_len = recv(c->sockfd, recvbuf, 512, 0);
+    if (-1 == recv_len) {
+        free(recvbuf);
         return errno;
+    }
+    if (recvbuf[0] != 0x82) {
+        free(recvbuf);
+        return 0;
     }
     // Assume payload length < 126 bytes
     uint16_t payloadStart = 2;
-    //printf("(len: %d, mask: %d) ", recvbuf[1] & 0x7F, recvbuf[1] & 0x10);
     switch (recvbuf[payloadStart]) {
         case protocol_HOME: {
             printf("protocol_HOME\n");
             break;
         }
         case protocol_CHESS: {
+            if (recvbuf[1] < 50)
+                return 0; // Garbage
             if (NULL != c->on_winner_declared && c->winner != recvbuf[payloadStart + 2])
                 c->on_winner_declared(recvbuf[payloadStart + 2]);
             c->winner = recvbuf[payloadStart + 2];
@@ -180,9 +196,11 @@ int hchess_wait_for_state(uint16_t sessionIndex) {
         }
         default: {
             printf("Unimplemented OP code %d received\n", recvbuf[payloadStart]);
+            free(recvbuf);
             return -1;
         }
     }
+    free(recvbuf);
     return 0;
 }
 
