@@ -1,8 +1,8 @@
 COMPILER = clang
 COMPILER_FLAGS = -Wpedantic -Wextra -fsanitize=undefined -fsanitize=address -lpthread
 INCLUDE = include
-SOURCES = src/main.c\
+SOURCES = src/cli-example.c\
 src/hchess.c
 
-all : ${SOURCES}
-	${COMPILER} -I${INCLUDE} -o main ${SOURCES} ${COMPILER_FLAGS}
+cli-example : ${SOURCES}
+	${COMPILER} -I${INCLUDE} -o cli ${SOURCES} ${COMPILER_FLAGS}
