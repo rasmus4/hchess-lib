@@ -17,17 +17,17 @@
 const char* ROW_LABELS = "12345678";
 const char* COLUMN_LABELS = "abcdefgh";
 
-void on_board_update(uint8_t* boardPtr, uint8_t flipped) {
+void on_board_update(uint8_t* boardPtr) {
     printf("\n");
     for (int y = 7; y >=0; --y) {
-        printf("%c  ", ROW_LABELS[flipped ? 7-y : y]);
+        printf("%c  ", ROW_LABELS[y]);
         for (int x = 0; x < 8; ++x)
             printf("%02x ", boardPtr[x + 8*y]);
         printf("\n\n");
     }
     printf("   ");
     for (int i = 0; i < 8; ++i) {
-        printf("%c  ", COLUMN_LABELS[flipped ? 7-i : i]);
+        printf("%c  ", COLUMN_LABELS[i]);
     }
     printf("\n\n");
 }

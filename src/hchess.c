@@ -73,18 +73,17 @@ int32_t hchess_create_room(uint16_t sessionIndex) {
 int hchess_move(uint16_t sessionIndex, char* from, char* to) {
     uint8_t* payload = (uint8_t*) malloc(sizeof(uint8_t) * 5);
     payload[0] = protocol_MOVE;
-    assert(0 == chessSessions[sessionIndex].isHost); // TODO implement non-flipped scenario
-    payload[1] = 104 - ((uint8_t) from[0]); // from.x
-    payload[2] = 56 - ((uint8_t) from[1]); // from.y
-    payload[3] = 104 - ((uint8_t) to[0]); // to.x
-    payload[4] = 56 - ((uint8_t) to[1]); // to.y
+    payload[1] = ((uint8_t) from[0]) - 97; // from.x
+    payload[2] = ((uint8_t) from[1]) - 49; // from.y
+    payload[3] = ((uint8_t) to[0]) - 97; // to.x
+    payload[4] = ((uint8_t) to[1]) - 49; // to.y
     _send_websocket_message(sessionIndex, payload, 5);
     return 0;
 }
 
 void hchess_set_callbacks(
     uint16_t sessionIndex,
-    void (*on_board_update)(uint8_t*, uint8_t),
+    void (*on_board_update)(uint8_t*),
     void (*on_time_spent_update)(double, double),
     void (*on_winner_declared)(uint8_t),
     void (*on_turn_change)(uint8_t)
@@ -156,7 +155,12 @@ int hchess_wait_for_state(uint16_t sessionIndex) {
                 if ((c->board)[i] != recvbuf[payloadStart + 21 + i]) {
                     uint8_t* boardCopy = (uint8_t*) malloc(sizeof(uint8_t) * 64);
                     memcpy(boardCopy, &recvbuf[payloadStart + 21], 64);
-                    c->on_board_update(boardCopy, 1-(c->isHost));
+                    if (!c->isHost)
+                        for (int i2 = 0; i2 < 64; ++i2)
+                            if (boardCopy[i2] != hchess_NO_PIECE)
+                                boardCopy[i2] ^= hchess_SELF_FLAG;
+
+                    c->on_board_update(boardCopy);
                     free(boardCopy);
                     break;
                 }
