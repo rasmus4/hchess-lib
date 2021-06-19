@@ -1,5 +1,5 @@
 COMPILER = clang
-COMPILER_FLAGS = -Wpedantic -Wextra -lpthread
+COMPILER_FLAGS = -Wpedantic -Wextra -fsanitize=undefined -fsanitize=address -lpthread
 INCLUDE = include
 SOURCES = src/main.c\
 src/hchess.c
