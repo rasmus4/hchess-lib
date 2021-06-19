@@ -1,5 +1,5 @@
-#ifndef _HCHESS_H
-#define _HCHESS_H
+#ifndef HCHESS_H
+#define HCHESS_H
 
 #include <stdio.h>
 #include <sys/socket.h>

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef PROTOCOL_H
+#define PROTOCOL_H
 
 #define protocol_VERSION 2
 
@@ -36,3 +37,5 @@ enum protocol_pieces {
 enum protocol_room_type {
     protocol_HCHESS = 0
 };
+
+#endif
