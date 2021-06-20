@@ -12,8 +12,9 @@ uint16_t hchess_connect(char* address, int port) {
     struct timeval tv;
     tv.tv_sec = 3;
     tv.tv_usec = 0;
+    int enable = 1;
     setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (const char*) &tv, sizeof(tv));
-
+    setsockopt(sockfd, IPPROTO_TCP, TCP_NODELAY, &enable, sizeof(enable));
     struct sockaddr_in server;
     server.sin_family = AF_INET;
     server.sin_port = htons(port);
@@ -209,15 +210,13 @@ int _send_websocket_message(uint16_t sessionIndex, uint8_t* payload, size_t payl
     buf[0] = 0x80; // FIN
     buf[0] |= 0x0F & 0x02; // OPcode: Binary
     buf[1] = 0x80; // Masking
-    buf[1] |= 0x7F & 5; // Payload length
+    buf[1] |= 0x7F & payloadLen; // Payload length
     buf[2] = 0x00; // Masking key 1/4
     buf[3] = 0x00; // Masking key 2/4
     buf[4] = 0x00; // Masking key 3/4
     buf[5] = 0x00; // Masking key 4/4
     memcpy(&buf[6], payload, payloadLen);
-    // Increase chances of socket actually flushing data
-    int padding = (payloadLen < 5 ? 5 - payloadLen : 0);
-    send(chessSessions[sessionIndex].sockfd, buf, 6 + payloadLen + padding, 0);
+    send(chessSessions[sessionIndex].sockfd, buf, 6 + payloadLen, 0);
     free(buf);
     return 0;
 }
